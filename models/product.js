@@ -1,23 +1,5 @@
-const fs = require('fs');
-const path = require('path');
-
 const Cart = require ('../models/cart');
-
-const p = path.join(
-  path.dirname(process.mainModule.filename),
-  'data',
-  'products.json'
-);
-
-const getProductsFromFile = cb => {
-  fs.readFile(p, (err, fileContent) => {
-    if (err) {
-      cb([]);
-    } else {
-      cb(JSON.parse(fileContent));
-    }
-  });
-};
+const db = require('../util/database');
 
 module.exports = class Product {
   constructor(id, title, imageUrl, description, price) {
@@ -29,58 +11,18 @@ module.exports = class Product {
   }
 
   save() {
-    getProductsFromFile(products => {
-      if (this.id) {
-        // Updating a product
-        const existingProductIndex = products.findIndex(
-          prod => prod.id === this.id
-        );
-        const updatedProducts = [...products];
-        updatedProducts[existingProductIndex] = this;
-        fs.writeFile(p, JSON.stringify(updatedProducts), err => {
-          console.log(err);
-        });
-      } else {
-        // Adding a new product
-        this.id = Math.random().toString();
-        products.push(this);
-        fs.writeFile(p, JSON.stringify(products), err => {
-          console.log(err);
-        });
-      }
-    });
+   return db.execute('INSERT INTO products (title,price,imageUrl, description) VALUES (? ,? , ? ,?)' , [this.title , this.price , this.imageUrl , this.description]);
   }
 
   static deleteById(prodId) {
-    getProductsFromFile(products => {
-      if (prodId) {
-        // Updating a product
-        const product = products.find(prod => prod.id === prodId);
-        const updatedProducts = products.filter(
-          prod => prod.id !== prodId
-        );
-        fs.writeFile(p, JSON.stringify(updatedProducts), err => {
-          if (!err) {
-            // Delete from the cart
-            Cart.deleteProduct(prodId, product.price);
-          }
-          console.log(err);
-        });
-      } else {
-        // Error. Product not found
-        console.log('Product not found. Please check the');
-      }
-    });
+    
   }
 
-  static fetchAll(cb) {
-    getProductsFromFile(cb);
+  static fetchAll() {
+    return db.execute('select * from products');
   }
 
-  static findById(id, cb) {
-    getProductsFromFile(products => {
-      const product = products.find(p => p.id === id);
-      cb(product);
-    });
+  static findById(id) {
+    return db.execute('SELECT * FROM products where products.id = ?' , [id])
   }
 };

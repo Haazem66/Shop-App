@@ -4,10 +4,13 @@ const path = require('path');
 
 const app = express();
 
+const db = require('./util/database');
 
 const adminRoutes = require('./routes/admin');
 const shopRoutes = require('./routes/shop');
 const errorController = require('./controllers/error');
+
+
 
 // app.engine('hbs' , expressHbs.engine());
 app.set('view engine' , 'ejs');
