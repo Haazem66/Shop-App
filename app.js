@@ -7,6 +7,8 @@ const User = require('./models/user');
 const app = express();
 const session = require('express-session');
 const MongoDBStore = require('connect-mongodb-session')(session);
+const csrf = require('csurf');
+const flash = require('connect-flash');
 
 const adminRoutes = require('./routes/admin');
 const shopRoutes = require('./routes/shop');
@@ -17,6 +19,8 @@ const store = new MongoDBStore({
     uri: 'mongodb+srv://Hazzem:w7d%405PvY.X_eGgY@cluster0.8xqeba5.mongodb.net/shop?&w=majority',
     collection: 'sessions'
 });
+
+const csrfProtection = csrf({})
 
 // const User = require('./models/user');
 
@@ -29,6 +33,7 @@ app.set('views' , 'views'); // NOTE: >>tells pug where to find templates<<
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(express.static(path.join(__dirname , 'public')))
 app.use(session({secret: 'my secret' , resave: false , saveUninitialized: false ,store: store})); 
+app.use(csrfProtection);
 
 app.use((req,res,next) => {
     if(!req.session.user){
@@ -39,6 +44,14 @@ app.use((req,res,next) => {
         next();
     }).catch(err => console.log(err))
 })
+app.use(flash());
+app.use((req, res, next) => {
+    res.locals.isAuthenticated = req.session.isLoggedIn;
+    res.locals.csrfToken = req.csrfToken();
+    next();
+  });
+
+
 // Filter only /admin paths
 app.use('/admin', adminRoutes);
 app.use(shopRoutes);
@@ -48,18 +61,6 @@ app.use(errorController.get404);
 
 mongoose.connect('mongodb+srv://Hazzem:w7d%405PvY.X_eGgY@cluster0.8xqeba5.mongodb.net/shop?retryWrites=true&w=majority').then(result => {
     // console.log(result);
-    User.findOne().then(user => {
-        if (!user){
-            const user = new User({
-                name: 'hazem', 
-                email: 'hazem@outlook.com',
-                cart: {
-                    items: []
-                }
-            });
-            user.save();
-        }
-    })
     console.log('Connected');
     app.listen(3000);
 }).catch(err => console.log(err));
