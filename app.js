@@ -5,10 +5,19 @@ const mongoose = require('mongoose');
 const User = require('./models/user');
 
 const app = express();
+const session = require('express-session');
+const MongoDBStore = require('connect-mongodb-session')(session);
 
 const adminRoutes = require('./routes/admin');
 const shopRoutes = require('./routes/shop');
+const authRoutes = require('./routes/auth');
 const errorController = require('./controllers/error');
+
+const store = new MongoDBStore({
+    uri: 'mongodb+srv://Hazzem:w7d%405PvY.X_eGgY@cluster0.8xqeba5.mongodb.net/shop?&w=majority',
+    collection: 'sessions'
+});
+
 // const User = require('./models/user');
 
 // app.engine('hbs' , expressHbs.engine());
@@ -19,9 +28,13 @@ app.set('views' , 'views'); // NOTE: >>tells pug where to find templates<<
 
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(express.static(path.join(__dirname , 'public')))
+app.use(session({secret: 'my secret' , resave: false , saveUninitialized: false ,store: store})); 
 
 app.use((req,res,next) => {
-    User.findById('651da87c0cf8dbe6da8f9ce9').then(user => {
+    if(!req.session.user){
+        return next();
+    }
+    User.findById(req.session.user._id).then(user => {
         req.user = user;
         next();
     }).catch(err => console.log(err))
@@ -29,6 +42,7 @@ app.use((req,res,next) => {
 // Filter only /admin paths
 app.use('/admin', adminRoutes);
 app.use(shopRoutes);
+app.use(authRoutes);
 
 app.use(errorController.get404);
 
