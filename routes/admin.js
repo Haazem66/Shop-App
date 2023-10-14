@@ -11,14 +11,12 @@ router.get('/add-product',isAuth,adminController.getAddProduct);
 router.get('/products' ,isAuth, adminController.getProducts); 
 
 // // /admin/add-product => POST
-router.post('/add-product' ,[body('title').isLength({min: 5}).isString().trim(),
-body('imageUrl').isURL(),
+router.post('/add-product' ,[body('title').isLength({min: 5}).isString().trim(),    
 body('price').isFloat(),
 body('description').isString().isLength({min: 8 , max: 400}).trim()
 ] ,isAuth,adminController.postAddProduct);
 router.get('/edit-product/:productId',isAuth , adminController.getEditProduct);
 router.post('/edit-product',[body('title').isLength({min: 5}).isString().trim(),
-body('imageUrl').isURL(),
 body('price').isFloat(),
 body('description').isString().isLength({min: 8 , max: 400}).trim()
 ],isAuth , adminController.postEditProduct);
