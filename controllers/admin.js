@@ -1,5 +1,6 @@
 const Product = require('../models/product');
 const mongoose = require('mongoose'); 
+const fileHelper = require('../util/file');
 const {validationResult} = require('express-validator');
 exports.getAddProduct = (req, res, next) => {
   console.log('getAddProduct');
@@ -84,10 +85,10 @@ exports.getEditProduct = (req, res, next) => {
       });
     })
     .catch(err => {
-      console.log('Error in getEditProduct');
-      const error = new Error(err);
-      error.httpStatusCode = 500;
-      return next(error);
+      console.log(err);
+      // const error = new Error(err);
+      // error.httpStatusCode = 500;
+      // return next(error);
     });
 };
 
@@ -123,6 +124,7 @@ exports.postEditProduct = (req, res, next) => {
     product.price = updatedPrice;
     product.description = updatedDesc;
     if(image){
+      fileHelper.deleteFile(product.imageUrl);
       console.log(image.path);
       product.imageUrl = image.path;
     }
@@ -131,9 +133,12 @@ exports.postEditProduct = (req, res, next) => {
       res.redirect('/admin/products');
     });
   })
-    .catch(err => {const error = new Error(err);
-      error.httpStatusCode = 500;
-      return next(error);});
+    .catch(err => {
+      // const error = new Error(err);
+      // error.httpStatusCode = 500;
+      // return next(error);
+      console.log(err);
+    });
 };
 
 exports.getProducts = (req, res, next) => {
@@ -146,19 +151,31 @@ exports.getProducts = (req, res, next) => {
         path: '/admin/products'
       });
     })
-    .catch(err => {const error = new Error(err);
-      error.httpStatusCode = 500;
-      return next(error);});
+    .catch(err => {
+      // const error = new Error(err);
+      // error.httpStatusCode = 500;
+      // return next(error);
+      console.log(err);
+    });
 };
 
 exports.postDeleteProduct = (req, res, next) => {
   const prodId = req.body.productId;
-  Product.deleteOne({_id: prodId , userId: req.user._id})
-    .then(() => {
-      console.log('DESTROYED PRODUCT');
-      res.redirect('/admin/products');
-    })
-    .catch(err => {const error = new Error(err);
-      error.httpStatusCode = 500;
-      return next(error);});
+  Product.findById({ _id: prodId }).then(product => {
+    if (!product) {
+      return next(new Error('Product not Found'));
+    }
+    fileHelper.deleteFile(product.imageUrl);
+    return Product.deleteOne({ _id: prodId, userId: req.user._id })
+  }).then(() => {
+    console.log('DESTROYED PRODUCT');
+    res.redirect('/admin/products');
+  })
+    .catch(err => {
+      // const error = new Error(err);
+      // error.httpStatusCode = 500;
+      // return next(error);
+      console.log(err);
+    });
+
 };
